@@ -1,4 +1,3 @@
-// testDb.ts
 import pool from './db';
 
 const testConnection = async () => {
