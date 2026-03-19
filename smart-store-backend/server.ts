@@ -1,15 +1,24 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import productsRouter from './routes/products.js';
+import productRoutes from './routes/productRoutes';
 
 dotenv.config();
 
 const app = express();
+
+// Middleware
 app.use(express.json());
 
-app.use('/products', productsRouter);
+// Routes
+app.use('/products', productRoutes);
+
+// Test route
+app.get('/', (req, res) => {
+  res.send('API is running');
+});
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
