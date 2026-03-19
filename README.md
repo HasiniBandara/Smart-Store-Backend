@@ -1,3 +1,6 @@
 
-# React + Vite + TypeScript + Tailwind CSS
+* React 
+* Vite 
+* TypeScript 
+* Tailwind CSS
 
