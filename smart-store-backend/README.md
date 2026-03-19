@@ -1,4 +1,4 @@
-# Backend
+# Installation
 
 * npm install -g @nestjs/cli
 * nest --version
