@@ -1,8 +1,5 @@
 # Tech Stack
 
-* React 
-* Vite 
-* TypeScript 
-* Tailwind CSS
+* NestJS
 * PostgreSQL
 * Postman
