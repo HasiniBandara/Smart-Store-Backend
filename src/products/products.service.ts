@@ -25,6 +25,16 @@ export class ProductsService {
     return result.rows[0];
   }
 
+  async findByIds(ids: number[]) {
+    if (ids.length === 0) return [];
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+    const result = await this.db.query(
+      `SELECT * FROM products WHERE id IN (${placeholders})`,
+      ids,
+    );
+    return result.rows;
+  }
+
   async create(createProductDto: CreateProductDto) {
     const { name, image, price, stock, category_id } = createProductDto;
     const result = await this.db.query(
@@ -60,15 +70,22 @@ export class ProductsService {
     return result.rows[0];
   }
 
-  async reduceStock(reduceStockDto: ReduceStockDto) {
+  async reduceStock(reduceStockDto: ReduceStockDto, client?: any) {
     const { items } = reduceStockDto;
+    const db = client || this.db;
+
     for (const item of items) {
-      await this.db.query(
+      const result = await db.query(
         `UPDATE products
          SET stock = stock - $1
-         WHERE id = $2`,
+         WHERE id = $2 AND stock >= $1
+         RETURNING id`,
         [item.quantity, item.id],
       );
+
+      if (result.rows.length === 0) {
+        throw new Error(`Insufficient stock for product ID ${item.id}`);
+      }
     }
     return { message: 'Stock updated successfully' };
   }

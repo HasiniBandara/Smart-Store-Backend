@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException, UseGuards } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { ReduceStockDto } from './dto/reduce-stock.dto';
+import { AuthGuard } from '../auth/auth.guard';
+import { RolesGuard, Roles } from '../auth/roles.guard';
 
 @Controller('products')
 export class ProductsController {
@@ -21,11 +22,15 @@ export class ProductsController {
   }
 
   @Post()
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   async create(@Body() createProductDto: CreateProductDto) {
     return this.productsService.create(createProductDto);
   }
 
   @Put(':id')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   async update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     const product = await this.productsService.update(+id, updateProductDto);
     if (!product) throw new NotFoundException('Product not found');
@@ -33,6 +38,8 @@ export class ProductsController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin')
   async remove(@Param('id') id: string) {
     const product = await this.productsService.remove(+id);
     if (!product) throw new NotFoundException('Product not found');
@@ -40,7 +47,8 @@ export class ProductsController {
   }
 
   @Post('reduce-stock')
-    reduceStock(@Body() reduceStockDto: any) {
+  @UseGuards(AuthGuard) // Only logged in users can reduce stock via orders
+  reduceStock(@Body() reduceStockDto: any) {
     return this.productsService.reduceStock(reduceStockDto);
   }
 }

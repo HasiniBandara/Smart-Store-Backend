@@ -1,15 +1,17 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { OrdersService } from './orders.service';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
+  @UseGuards(AuthGuard)
   async createOrder(
+    @Req() req: any,
     @Body()
     body: {
-      userId: number;
       totalPrice: number;
       status: string;
       cartItems: { productId: number; quantity: number; price: number }[];
@@ -17,8 +19,7 @@ export class OrdersController {
       paymentGateway?: 'stripe' | 'paypal';
     },
   ) {
-    // If no userId is provided (since we have no full auth context in frontend easily available), default it to 1
-    const userId = body.userId || 1;
+    const userId = req.user.id;
     
     return this.ordersService.createOrder(
       userId,
@@ -28,5 +29,18 @@ export class OrdersController {
       body.transactionId,
       body.paymentGateway,
     );
+  }
+
+  @Get('user/:userId')
+  @UseGuards(AuthGuard)
+  async findByUser(@Req() req: any, @Param('userId') userId: string) {
+    const authenticatedUserId = req.user.id;
+    
+    // Security check: only allow users to see their own orders
+    if (String(authenticatedUserId) !== String(userId)) {
+      throw new ForbiddenException('You can only view your own order history');
+    }
+
+    return this.ordersService.findByUser(authenticatedUserId);
   }
 }

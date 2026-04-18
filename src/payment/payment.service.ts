@@ -41,23 +41,50 @@ export class PaymentService {
     };
   }
 
-  async verifyStripePayment(paymentIntentId: string): Promise<boolean> {
+  async verifyStripePayment(paymentIntentId: string, expectedLkrAmount: number): Promise<boolean> {
     try {
       if (!paymentIntentId) return false;
       const intent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
-      return intent.status === 'succeeded';
+      
+      if (intent.status !== 'succeeded') return false;
+
+      // 1. Verify currency (must be USD as per our design)
+      if (intent.currency !== 'usd') return false;
+
+      // 2. Use the LKR amount stored in metadata during intent creation
+      const metadataLkr = intent.metadata?.original_amount_lkr;
+      if (metadataLkr) {
+        if (parseFloat(metadataLkr) !== expectedLkrAmount) {
+          console.error(`Stripe metadata amount mismatch: expected ${expectedLkrAmount}, got ${metadataLkr}`);
+          return false;
+        }
+        // If metadata matches, we trust the intent was created for this amount
+        return true;
+      }
+
+      // Fallback: Recalculate (less reliable due to rate fluctuations)
+      const expectedUsd = await this.convertLKRtoUSD(expectedLkrAmount);
+      const expectedCents = Math.max(Math.round(expectedUsd * 100), 50);
+
+      const diff = Math.abs(intent.amount - expectedCents);
+      if (diff > 1) {
+        console.error(`Stripe fallback amount mismatch: expected ${expectedCents}, got ${intent.amount}`);
+        return false;
+      }
+
+      return true;
     } catch (error) {
       console.error('Error verifying Stripe payment:', error);
       return false;
     }
   }
 
-  async verifyPayPalPayment(orderId: string): Promise<boolean> {
+  async verifyPayPalPayment(orderId: string, expectedLkrAmount: number): Promise<boolean> {
     try {
       const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET } = process.env;
       if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
-        console.warn('PayPal credentials are missing. Assuming success (please configure ENV variables!).');
-        return true;
+        console.error('PayPal credentials are missing. Cannot verify payment.');
+        return false;
       }
       
       const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
@@ -68,7 +95,20 @@ export class PaymentService {
       
       if (!response.ok) return false;
       const data = await response.json();
-      return data.status === 'COMPLETED';
+      
+      if (data.status !== 'COMPLETED') return false;
+
+      // Verify amount
+      const paidAmountUsd = parseFloat(data.purchase_units[0].amount.value);
+      const expectedUsd = await this.convertLKRtoUSD(expectedLkrAmount);
+
+      // Buffer of 0.05 USD for conversion differences
+      if (Math.abs(paidAmountUsd - expectedUsd) > 0.05) {
+        console.error(`PayPal amount mismatch: expected ${expectedUsd}, got ${paidAmountUsd}`);
+        return false;
+      }
+
+      return true;
     } catch (error) {
       console.error('Error verifying PayPal payment:', error);
       return false;

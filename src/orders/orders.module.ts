@@ -4,8 +4,10 @@ import { OrdersService } from './orders.service';
 import { DatabaseModule } from '../database/database.module';
 import { PaymentModule } from '../payment/payment.module';
 
+import { ProductsModule } from '../products/products.module';
+
 @Module({
-  imports: [DatabaseModule, PaymentModule],
+  imports: [DatabaseModule, PaymentModule, ProductsModule],
   controllers: [OrdersController],
   providers: [OrdersService],
   exports: [OrdersService],
