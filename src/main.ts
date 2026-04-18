@@ -14,6 +14,7 @@ async function bootstrap() {
   origin: [
     'http://localhost:5173',
     'https://smart-store-frontend.vercel.app',
+    'https://c-and-c-smart-store-admin-web.vercel.app',
   ],
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   allowedHeaders: ['Content-Type', 'Authorization'],
