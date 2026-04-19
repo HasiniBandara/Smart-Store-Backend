@@ -43,4 +43,10 @@ export class OrdersController {
 
     return this.ordersService.findByUser(authenticatedUserId);
   }
+
+  @Get()
+@UseGuards(AuthGuard)
+async findAll() {
+  return this.ordersService.findAll();
+}
 }

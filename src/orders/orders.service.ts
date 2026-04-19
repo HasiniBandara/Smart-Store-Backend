@@ -109,4 +109,25 @@ export class OrdersService {
     );
     return result.rows;
   }
+
+  async findAll() {
+  const result = await this.db.query(
+    `SELECT o.id,
+            o.created_at AS "createdAt",
+            json_agg(
+                json_build_object(
+                    'productId', oi.product_id,
+                    'name', p.name,
+                    'quantity', oi.quantity
+                )
+            ) FILTER (WHERE oi.product_id IS NOT NULL) AS "products"
+     FROM orders o
+     LEFT JOIN order_items oi ON o.id = oi.order_id
+     LEFT JOIN products p ON oi.product_id = p.id
+     GROUP BY o.id
+     ORDER BY o.created_at DESC`
+  );
+
+  return result.rows;
+}
 }
