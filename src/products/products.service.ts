@@ -94,20 +94,14 @@ export class ProductsService {
   const result = await this.db.query(
     `UPDATE products
      SET name = COALESCE($1, name),
-         price = COALESCE($2, price),
-         stock = COALESCE($3, stock),
-         category_id = COALESCE($4, category_id)
-     WHERE id = $5
+              image = COALESCE($2, image)
+         price = COALESCE($3, price),
+         stock = COALESCE($4, stock),
+         category_id = COALESCE($5, category_id),
+     WHERE id = $6
      RETURNING *`,
-    [
-      body.name,
-      body.price,
-      body.stock,
-      body.category_id,
-      id,
-    ],
+    [body.name, body.image, body.price, body.stock, body.category_id, id],
   );
-
   return result.rows[0];
 }
 }
