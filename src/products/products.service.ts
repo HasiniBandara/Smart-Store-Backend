@@ -36,13 +36,13 @@ export class ProductsService {
   }
 
   async create(createProductDto: CreateProductDto) {
-    const { name, image, price, stock, category_id } = createProductDto;
-    const result = await this.db.query(
-      'INSERT INTO products (name, image, price, stock, category_id) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-      [name, image, price, stock, category_id],
-    );
-    return result.rows[0];
-  }
+  const { name, image = null, price, stock, category_id } = createProductDto;
+  const result = await this.db.query(
+    'INSERT INTO products (name, image, price, stock, category_id) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+    [name, image, price, stock, category_id],
+  );
+  return result.rows[0];
+}
 
   async update(id: number, updateProductDto: UpdateProductDto) {
     const { name, image, price, stock, category_id } = updateProductDto;
